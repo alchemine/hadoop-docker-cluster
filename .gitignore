@@ -137,3 +137,10 @@ dmypy.json
 
 # tensorboard
 tensorboard
+
+# volume
+config/
+dags/
+data/
+logs/
+configs/
