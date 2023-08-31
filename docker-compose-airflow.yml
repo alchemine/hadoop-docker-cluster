@@ -75,13 +75,16 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # for volume binding in docker operator
-    DAGS_DIR: '/workspace/project/bigdata-docker-cluster/dags'
-    DATA_DIR: '/workspace/project/bigdata-docker-cluster/data'
-
+    DAGS_DIR: '/workspace/project/hadoop-docker-cluster/dags'
+    HDFS_DIR: '/workspace/project/hadoop-docker-cluster/data/hdfs'
+    DFS_DIR : '/workspace/project/hadoop-docker-cluster/data/dfs'
+  env_file:
+      - hadoop-hive.env
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/data:/data
+    - ${AIRFLOW_PROJ_DIR:-.}/data/dfs:/dfs
+    - ${AIRFLOW_PROJ_DIR:-.}/data/hdfs:/hdfs
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
@@ -98,6 +101,7 @@ services:
   postgres:
     image: postgres:13
     container_name: airflow-postgres
+    hostname: airflow-postgres
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -116,6 +120,7 @@ services:
   redis:
     image: redis:latest
     container_name: airflow-redis
+    hostname: airflow-redis
     expose:
       - 6379
     healthcheck:
@@ -131,6 +136,7 @@ services:
   airflow-webserver:
     <<: *airflow-common
     container_name: airflow-webserver
+    hostname: airflow-webserver
     command: webserver
     ports:
       - "8080:8080"
@@ -149,6 +155,7 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     container_name: airflow-scheduler
+    hostname: airflow-scheduler
     command: scheduler
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
@@ -165,6 +172,7 @@ services:
   airflow-worker:
     <<: *airflow-common
     container_name: airflow-worker
+    hostname: airflow-worker
     command: celery worker
     ports:
       - "10022:22"
@@ -191,6 +199,7 @@ services:
   airflow-triggerer:
     <<: *airflow-common
     container_name: airflow-triggerer
+    hostname: airflow-triggerer
     command: triggerer
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
@@ -207,6 +216,7 @@ services:
   airflow-init:
     <<: *airflow-common
     container_name: airflow-init
+    hostname: airflow-init
     entrypoint: /bin/bash
     # yamllint disable rule:line-length
     command:
@@ -272,6 +282,7 @@ services:
         fi
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow db init
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
@@ -323,6 +334,7 @@ services:
   docker-proxy:
     image: bobrik/socat
     container_name: docker-proxy
+    hostname: docker-proxy
     command: "TCP4-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock"
     ports:
       - "2376:2375"

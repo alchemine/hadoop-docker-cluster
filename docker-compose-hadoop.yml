@@ -4,6 +4,7 @@ services:
   namenode:
     image: bde2020/hadoop-namenode:1.1.0-hadoop2.8-java8
     container_name: namenode
+    hostname: namenode
     volumes:
       - ./data/namenode:/hadoop/dfs/name
     environment:
@@ -18,6 +19,7 @@ services:
   datanode:
     image: bde2020/hadoop-datanode:1.1.0-hadoop2.8-java8
     container_name: datanode
+    hostname: datanode
     depends_on:
       - namenode
     volumes:
@@ -30,28 +32,41 @@ services:
       - hadoop-network
 
   hive-server:
-    image: bde2020/hive:2.1.0-postgresql-metastore
+    image: bde2020/hive:2.3.2-postgresql-metastore
     container_name: hive-server
+    hostname: hive-server
+    volumes:
+      - ./data/hdfs:/hdfs
+      - ./data/dfs:/dfs
     env_file:
       - hadoop-hive.env
     environment:
-      - "HIVE_CORE_CONF_javax_jdo_option_ConnectionURL=jdbc:postgresql://hive-metastore/metastore"
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
     ports:
-      - 10000:10000
+      - "10000:10000"
     networks:
       - hadoop-network
 
   hive-metastore:
-    image: bde2020/hive:2.1.0-postgresql-metastore
+    image: bde2020/hive:2.3.2-postgresql-metastore
     container_name: hive-metastore
+    hostname: hive-metastore
+    volumes:
+      - ./data/hdfs:/hdfs
+      - ./data/dfs:/dfs
     env_file:
       - hadoop-hive.env
     command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode:50075 hive-metastore-postgresql:5432"
+    ports:
+      - "9083:9083"
     networks:
       - hadoop-network
 
   hive-metastore-postgresql:
-    image: bde2020/hive-metastore-postgresql:2.1.0
+    image: bde2020/hive-metastore-postgresql:2.3.0
     container_name: hive-metastore-postgresql
     networks:
       - hadoop-network
@@ -59,6 +74,10 @@ services:
   spark-master:
     image: bde2020/spark-master:2.1.0-hadoop2.8-hive-java8
     container_name: spark-master
+    hostname: spark-master
+    volumes:
+      - ./data/hdfs:/hdfs
+      - ./data/dfs:/dfs
     ports:
       - 18080:8080
       - 7077:7077
@@ -70,6 +89,10 @@ services:
   spark-worker:
     image: bde2020/spark-worker:2.1.0-hadoop2.8-hive-java8
     container_name: spark-worker
+    hostname: spark-worker
+    volumes:
+      - ./data/hdfs:/hdfs
+      - ./data/dfs:/dfs
     depends_on:
       - spark-master
     environment:
@@ -84,6 +107,10 @@ services:
   spark-notebook:
     image: bde2020/spark-notebook:2.1.0-hadoop2.8-hive
     container_name: spark-notebook
+    hostname: spark-notebook
+    volumes:
+      - ./data/hdfs:/hdfs
+      - ./data/dfs:/dfs
     env_file:
       - hadoop-hive.env
     ports:
@@ -94,6 +121,7 @@ services:
   hue:
     image: bde2020/hdfs-filebrowser:3.11
     container_name: hue
+    hostname: hue
     ports:
       - 8088:8088
     environment:

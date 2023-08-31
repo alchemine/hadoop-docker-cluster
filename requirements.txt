@@ -1,4 +1,6 @@
 pyspark
 hdfs
-apache-airflow-providers-apache-spark
 apache-airflow-providers-docker
+apache-airflow-providers-apache-hive
+apache-airflow-providers-apache-spark
+apache-airflow-providers-apache-kafka
