@@ -1,5 +1,7 @@
 pyspark
 hdfs
+kafka-python
+PyKakao
 apache-airflow-providers-docker
 apache-airflow-providers-apache-hive
 apache-airflow-providers-apache-spark

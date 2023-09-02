@@ -10,10 +10,13 @@ docker compose -f docker-compose-hadoop.yml up -d hive-server
 docker compose -f docker-compose-hadoop.yml up -d spark-master spark-worker spark-notebook hue
 
 # 3. Create airflow cluster
-docker compose -f docker-compose-airflow.yml up airflow-init --build
+docker compose -f docker-compose-airflow.yml up airflow-init
 docker compose -f docker-compose-airflow.yml up -d
 
-# 4. Check
+# 4. Create kafka cluster
+docker compose -f docker-compose-kafka.yml up -d
+
+# 5. Check
 docker ps -a
 
 my_ip=`ip route get 1 | awk '{print $7;exit}'`
